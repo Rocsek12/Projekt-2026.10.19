@@ -51,19 +51,12 @@ let hatralevo = IDO_KERDESENKENT;
 let idozito = null;
 let valaszolt = false;
 
-// ---------- Segédfüggvény elemek létrehozásához ----------
-function elem(tag, osztaly, szoveg) {
-  const e = document.createElement(tag);
-  if (osztaly) e.className = osztaly;
-  if (szoveg !== undefined) e.textContent = szoveg;
-  return e;
-}
-
-// ---------- Alap szerkezet ----------
-const app = elem("div", "kontener");
-app.id = "app";
+// ---------- Alap doboz az oldalon ----------
+const app = document.createElement("div");
+app.className = "kontener";
 document.body.appendChild(app);
 
+// ---------- Az oldal tartalmának törlése ----------
 function torol() {
   clearInterval(idozito);
   app.innerHTML = "";
@@ -72,14 +65,25 @@ function torol() {
 // ---------- Kezdőképernyő ----------
 function kezdoKepernyo() {
   torol();
-  const kartya = elem("div", "kartya");
-  kartya.appendChild(elem("h1", "", "⚽ Sportkvíz"));
-  kartya.appendChild(
-    elem("p", "leiras", `${kerdesek.length} kérdés, kérdésenként ${IDO_KERDESENKENT} másodperc. Készen állsz?`)
-  );
-  const gomb = elem("button", "gomb", "Kezdés");
+
+  const kartya = document.createElement("div");
+  kartya.className = "kartya";
+
+  const cim = document.createElement("h1");
+  cim.textContent = "⚽ Sportkvíz";
+  kartya.appendChild(cim);
+
+  const leiras = document.createElement("p");
+  leiras.className = "leiras";
+  leiras.textContent = kerdesek.length + " kérdés, kérdésenként " + IDO_KERDESENKENT + " másodperc. Készen állsz?";
+  kartya.appendChild(leiras);
+
+  const gomb = document.createElement("button");
+  gomb.className = "gomb";
+  gomb.textContent = "Kezdés";
   gomb.addEventListener("click", jatekInditas);
   kartya.appendChild(gomb);
+
   app.appendChild(kartya);
 }
 
@@ -95,56 +99,93 @@ function kerdesMegjelenit() {
   torol();
   valaszolt = false;
   hatralevo = IDO_KERDESENKENT;
+
   const k = kerdesek[aktualis];
 
-  const kartya = elem("div", "kartya");
+  const kartya = document.createElement("div");
+  kartya.className = "kartya";
 
-  // Fejléc: számláló + pontszám + idő
-  const fejlec = elem("div", "fejlec");
-  fejlec.appendChild(elem("span", "", `${aktualis + 1} / ${kerdesek.length}`));
-  fejlec.appendChild(elem("span", "", `Pont: ${pontszam}`));
-  const idoElem = elem("span", "ido", `⏱ ${hatralevo}`);
+  // Fejléc
+  const fejlec = document.createElement("div");
+  fejlec.className = "fejlec";
+
+  const szamlalo = document.createElement("span");
+  szamlalo.textContent = (aktualis + 1) + " / " + kerdesek.length;
+  fejlec.appendChild(szamlalo);
+
+  const pont = document.createElement("span");
+  pont.textContent = "Pont: " + pontszam;
+  fejlec.appendChild(pont);
+
+  const idoElem = document.createElement("span");
+  idoElem.className = "ido";
   idoElem.id = "ido";
+  idoElem.textContent = "⏱ " + hatralevo;
   fejlec.appendChild(idoElem);
+
   kartya.appendChild(fejlec);
 
   // Haladásjelző sáv
-  const sav = elem("div", "sav");
-  const toltes = elem("div", "toltes");
-  toltes.style.width = `${(aktualis / kerdesek.length) * 100}%`;
+  const sav = document.createElement("div");
+  sav.className = "sav";
+
+  const toltes = document.createElement("div");
+  toltes.className = "toltes";
+  toltes.style.width = (aktualis / kerdesek.length) * 100 + "%";
   sav.appendChild(toltes);
+
   kartya.appendChild(sav);
 
-  kartya.appendChild(elem("h2", "", k.kerdes));
+  // Kérdés szövege
+  const kerdesCim = document.createElement("h2");
+  kerdesCim.textContent = k.kerdes;
+  kartya.appendChild(kerdesCim);
 
   // Válaszgombok
-  const lista = elem("div", "valaszok");
-  k.valaszok.forEach((szoveg, index) => {
-    const gomb = elem("button", "valasz", szoveg);
-    gomb.addEventListener("click", () => valaszol(index, lista));
+  const lista = document.createElement("div");
+  lista.className = "valaszok";
+
+  for (let i = 0; i < k.valaszok.length; i++) {
+    const gomb = document.createElement("button");
+    gomb.className = "valasz";
+    gomb.textContent = k.valaszok[i];
+    gomb.addEventListener("click", function () {  // melyikre kattintunk
+      valaszol(i);
+    });
     lista.appendChild(gomb);
-  });
+  }
+
   kartya.appendChild(lista);
 
   // Tovább gomb (kezdetben rejtett)
-  const tovabb = elem("button", "gomb rejtett", aktualis === kerdesek.length - 1 ? "Eredmény" : "Következő");
+  const tovabb = document.createElement("button");
+  tovabb.className = "gomb rejtett";
   tovabb.id = "tovabb";
+  if (aktualis === kerdesek.length - 1) {
+    tovabb.textContent = "Eredmény";
+  } else {
+    tovabb.textContent = "Következő";
+  }
   tovabb.addEventListener("click", kovetkezo);
   kartya.appendChild(tovabb);
 
   app.appendChild(kartya);
+
   idozitoInditas();
 }
 
 // ---------- Időzítő ----------
 function idozitoInditas() {
-  idozito = setInterval(() => {
-    hatralevo--;
-    const e = document.getElementById("ido");
-    if (e) {
-      e.textContent = `⏱ ${hatralevo}`;
-      if (hatralevo <= 5) e.classList.add("sürgős");
+  idozito = setInterval(function () {
+    hatralevo = hatralevo - 1;
+
+    const idoElem = document.getElementById("ido");
+    idoElem.textContent = "⏱ " + hatralevo;
+
+    if (hatralevo <= 5) {
+      idoElem.classList.add("surgos");
     }
+
     if (hatralevo <= 0) {
       clearInterval(idozito);
       idoLetelt();
@@ -153,37 +194,54 @@ function idozitoInditas() {
 }
 
 function idoLetelt() {
-  if (valaszolt) return;
+  if (valaszolt) {
+    return;
+  }
   valaszolt = true;
-  const gombok = document.querySelectorAll(".valasz");
-  gombok.forEach((g, i) => {
-    g.disabled = true;
-    if (i === kerdesek[aktualis].helyes) g.classList.add("helyes");
-  });
+
+  const gombok = document.querySelectorAll(".valasz");  // querySelectorAll (az id csak 1 elemet találna meg)
+  for (let i = 0; i < gombok.length; i++) {
+    gombok[i].disabled = true;
+    if (i === kerdesek[aktualis].helyes) {
+      gombok[i].classList.add("helyes");
+    }
+  }
+
   document.getElementById("tovabb").classList.remove("rejtett");
 }
 
 // ---------- Válasz kezelése ----------
 function valaszol(index) {
-  if (valaszolt) return;
+  if (valaszolt) {
+    return;
+  }
   valaszolt = true;
   clearInterval(idozito);
 
   const helyes = kerdesek[aktualis].helyes;
   const gombok = document.querySelectorAll(".valasz");
 
-  gombok.forEach((g, i) => {
-    g.disabled = true;
-    if (i === helyes) g.classList.add("helyes");
-    if (i === index && index !== helyes) g.classList.add("hibas");
-  });
+  for (let i = 0; i < gombok.length; i++) {
+    gombok[i].disabled = true;
 
-  if (index === helyes) pontszam++;
+    if (i === helyes) {
+      gombok[i].classList.add("helyes");
+    }
+    if (i === index && index !== helyes) {
+      gombok[i].classList.add("hibas");
+    }
+  }
+
+  if (index === helyes) {
+    pontszam = pontszam + 1;
+  }
+
   document.getElementById("tovabb").classList.remove("rejtett");
 }
 
 function kovetkezo() {
-  aktualis++;
+  aktualis = aktualis + 1;
+
   if (aktualis < kerdesek.length) {
     kerdesMegjelenit();
   } else {
@@ -194,19 +252,41 @@ function kovetkezo() {
 // ---------- Eredményoldal ----------
 function eredmeny() {
   torol();
-  const szazalek = Math.round((pontszam / kerdesek.length) * 100);
-  let uzenet = "Ezt még gyakorolni kell! 💪";
-  if (szazalek >= 90) uzenet = "Remek, igazi sportlexikon vagy! 🏆";
-  else if (szazalek >= 60) uzenet = "Szép eredmény! 👏";
-  else if (szazalek >= 40) uzenet = "Nem rossz, de van hova fejlődni. 🙂";
 
-  const kartya = elem("div", "kartya");
-  kartya.appendChild(elem("h1", "", "Eredmény"));
-  kartya.appendChild(elem("p", "nagy", `${pontszam} / ${kerdesek.length}`));
-  kartya.appendChild(elem("p", "leiras", `${szazalek}% – ${uzenet}`));
-  const gomb = elem("button", "gomb", "Újra játszom");
+  const szazalek = Math.round((pontszam / kerdesek.length) * 100);
+
+  let uzenet = "Ezt még gyakorolni kell! 💪";
+  if (szazalek >= 90) {
+    uzenet = "Remek, igazi sportlexikon vagy! 🏆";
+  } else if (szazalek >= 60) {
+    uzenet = "Szép eredmény! 👏";
+  } else if (szazalek >= 40) {
+    uzenet = "Nem rossz, de van hova fejlődni. 🙂";
+  }
+
+  const kartya = document.createElement("div");
+  kartya.className = "kartya";
+
+  const cim = document.createElement("h1");
+  cim.textContent = "Eredmény";
+  kartya.appendChild(cim);
+
+  const nagy = document.createElement("p");
+  nagy.className = "nagy";
+  nagy.textContent = pontszam + " / " + kerdesek.length;
+  kartya.appendChild(nagy);
+
+  const leiras = document.createElement("p");
+  leiras.className = "leiras";
+  leiras.textContent = szazalek + "% – " + uzenet;
+  kartya.appendChild(leiras);
+
+  const gomb = document.createElement("button");
+  gomb.className = "gomb";
+  gomb.textContent = "Újra játszom";
   gomb.addEventListener("click", jatekInditas);
   kartya.appendChild(gomb);
+
   app.appendChild(kartya);
 }
 
